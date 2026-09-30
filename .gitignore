@@ -1,0 +1,9 @@
+# Local document generation work and previews
+.build/
+
+# OS/editor temporary files
+.DS_Store
+__MACOSX/
+~$*
+*.tmp
+__pycache__/

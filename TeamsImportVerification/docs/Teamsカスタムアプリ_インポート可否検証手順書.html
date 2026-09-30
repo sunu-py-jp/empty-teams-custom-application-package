@@ -1,0 +1,1129 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Teamsカスタムアプリ インポート可否検証手順書</title><style>
+:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;color:#182c43;background:#edf2f7;font-size:15px;line-height:1.8}body{max-width:1050px;margin:40px auto;background:white;padding:55px 65px;box-shadow:0 8px 30px #17334d10}h1{font-size:30px;color:#174f94;line-height:1.4;border-bottom:4px solid #2563eb;padding-bottom:20px}h2{font-size:23px;border-bottom:1px solid #d1deec;margin-top:50px;color:#174f94}h3{font-size:18px;margin-top:28px}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}th,td{border:1px solid #d3dfe9;padding:9px 12px;vertical-align:top;text-align:left}th{background:#e8f0fc;color:#174f94}tr:nth-child(even){background:#f8fafc}blockquote{border-left:4px solid #2563eb;background:#eef4ff;padding:12px 20px;margin:20px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6fa;padding:16px;font-size:12px;line-height:1.5;border:1px solid #dce5ef}code{font-family:Menlo,Consolas,"Yu Gothic",monospace}p code,td code,li code{background:#f1f5fa;padding:2px 4px}a{color:#195aab;overflow-wrap:anywhere}li{margin:5px 0}@media(max-width:760px){body{margin:0;padding:25px 18px}table{font-size:12px}th,td{padding:7px}h1{font-size:24px}}@media print{body{padding:0;margin:0;box-shadow:none}h2,h3{break-after:avoid}tr{break-inside:avoid}thead{display:table-header-group}a{color:inherit}}
+</style><body><h1>Teamsカスタムアプリ インポート可否検証手順書</h1>
+<p>文書版：1.1（技術レビュー反映版）<br>作成日：2026年9月30日<br>対象：検証用パッケージの準備、管理者登録、任意のユーザー追加</p>
+<blockquote>
+<p><strong>現在の準備状態</strong><br>同梱の <code>TeamsImportTest</code> フォルダーは、ZIP作成前の作業用ファイルである。<code>manifest.json</code>、<code>color.png</code>、<code>outline.png</code> の3ファイルを格納している。会社情報・URLは未設定のため、置換用の値を使用している。<strong>未設定値を変更して検証するまでは、お客様へ配布・アップロードしない。今回の成果物にはTeams登録用ZIPを作成していない。</strong> 実環境への登録・追加結果も未確認である。</p>
+</blockquote>
+<h2>1. 目的</h2>
+<p>当社が作成したTeamsアプリパッケージを、お客様のMicrosoft 365／Teams環境にインポートできるか確認する。</p>
+<p>本検証では、業務画面、Bot、認証処理、外部API連携などのアプリケーション本体は実装しない。アプリの定義情報とアイコンを含む最小構成のZIPファイルを作成し、お客様環境での登録可否を確認する。必要な場合に限り、テストユーザーによる登録済みアプリの追加まで確認する。</p>
+<h3>1.1 検証の基本方針</h3>
+<ul>
+<li>当社は、本番用と区別した名称・アプリIDの検証専用パッケージを作成する。</li>
+<li>お客様のTeams管理者が、お客様の管理センターから登録する。</li>
+<li><strong>管理者登録だけを行う場合も、登録前後に利用対象を確認する。</strong> 登録だけで全社員に利用可能になることがないよう、現在の管理方式と新規カスタムアプリの既定設定を事前確認する。</li>
+<li>管理者登録だけの場合は、対象アプリを原則 <code>No one</code>（誰も利用できない）にする。ユーザー追加試験を行う場合は、指定したテストユーザーまたはテストグループだけに限定する。</li>
+<li>登録、ユーザー追加、タブ表示、本番機能の動作を別々の確認項目として扱う。</li>
+<li>全社員への公開や、全社員へのカスタムアプリ直接アップロード許可は前提としない。</li>
+</ul>
+<h3>1.2 本検証で確認できること</h3>
+<table>
+<thead>
+<tr>
+<th>確認項目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>管理者によるインポート可否</td>
+<td>お客様のTeams管理センターから、当社作成のZIPを登録できるか</td>
+</tr>
+<tr>
+<td>アプリ情報の登録</td>
+<td>アプリ名、マニフェスト由来のID、バージョンを確認できるか</td>
+</tr>
+<tr>
+<td>利用対象の管理</td>
+<td>登録のみなら利用不可、追加試験を行うなら指定ユーザーに限定できるか</td>
+</tr>
+<tr>
+<td>ユーザーによる追加可否</td>
+<td>指定ユーザーが、登録済みアプリをTeamsに追加できるか（任意）</td>
+</tr>
+</tbody></table>
+<h3>1.3 本検証では確認しないこと</h3>
+<table>
+<thead>
+<tr>
+<th>対象外の項目</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>業務画面の正常表示</td>
+<td>業務画面を実装しないため</td>
+</tr>
+<tr>
+<td>Botの応答</td>
+<td>Botを定義・実装しないため</td>
+</tr>
+<tr>
+<td>SSOやユーザー認証</td>
+<td>認証機能を組み込まないため</td>
+</tr>
+<tr>
+<td>Microsoft GraphなどのAPI呼び出し</td>
+<td>API連携を実装しないため</td>
+</tr>
+<tr>
+<td>バックエンドとの通信</td>
+<td>バックエンドを構築しないため</td>
+</tr>
+<tr>
+<td>本番アプリの権限・同意・接続要件</td>
+<td>本番アプリでは構成や要求する権限が異なるため</td>
+</tr>
+</tbody></table>
+<p><strong>成功が意味するのは、この検証用パッケージを対象環境に登録できたこと、または指定ユーザーが追加できたことである。本番アプリの機能が動作することを保証するものではない。</strong></p>
+<h2>2. 作成するパッケージの概要</h2>
+<h3>2.1 Teamsアプリパッケージとは</h3>
+<p>Teamsアプリパッケージは、アプリの設定ファイルとアイコンなどをまとめたZIPファイルである。アプリ本体のプログラムやデータベースを格納してTeams上で実行するものではない。Web画面やBotの処理は別の場所で動作するため、パッケージ登録とアプリ本体の動作を切り分けて確認できる。[1]</p>
+<h3>2.2 今回の最小構成</h3>
+<p>アプリ名、説明、開発会社情報、検証用アプリID、バージョン、アイコン、個人用タブ1つを定義する。Bot、メッセージ拡張、SSO、追加API権限要求は定義しない。</p>
+<h3>2.3 ZIPと作業フォルダー</h3>
+<p>同梱成果物のうち、Teamsへ登録するZIPに入れるのは次の3ファイルだけである。</p>
+<pre><code class="language-text">TeamsImportVerification/
+├── TeamsImportTest/         ← ZIP作成前の3ファイル
+│   ├── manifest.json
+│   ├── color.png
+│   └── outline.png
+└── docs/                    ← 手順書。Teams登録用ZIPには含めない
+    └── Teamsカスタムアプリ_インポート可否検証手順書.md
+</code></pre>
+<p>上図は主要ファイルを示す。他に補助ファイルが同梱されていても、Teams登録用ZIPの対象には含めない。</p>
+<table>
+<thead>
+<tr>
+<th>ファイル</th>
+<th>役割</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>manifest.json</code></td>
+<td>名称、説明、アイコンの参照、タブなどを定義する</td>
+</tr>
+<tr>
+<td><code>color.png</code></td>
+<td>192×192ピクセルのカラーアイコン</td>
+</tr>
+<tr>
+<td><code>outline.png</code></td>
+<td>32×32ピクセル、透明背景に白い図柄のアイコン</td>
+</tr>
+</tbody></table>
+<p>最終的に作成するZIPは、次のように直下へ3ファイルを格納する。</p>
+<pre><code class="language-text">TeamsImportTest.zip
+├── manifest.json
+├── color.png
+└── outline.png
+</code></pre>
+<h3>2.4 タブの参照先URL</h3>
+<p>個人用タブには、利用してよい既存のHTTPSページを設定する。登録確認だけのために業務用Webアプリを新規開発する必要はない。</p>
+<p>ただし、通常のWebページはTeams内の埋め込みを許可していないことがある。また、Teamsタブの表示にはTeamsJSを読み込み、<code>app.initialize()</code>を呼び出すなどの要件がある。これらを満たさない既存ページは、Teams内で正常表示されない。[3]</p>
+<p><strong>タブの表示は合格条件に含めない。表示エラーだけで登録失敗・追加失敗と判断せず、管理画面の登録状態またはユーザーの追加済み状態を確認する。</strong></p>
+<p>画面表示まで確認する場合は、Teams向けHTMLページ、TeamsJS初期化、埋め込みを許可するHTTPヘッダー、HTTPS公開環境などを別途用意する。なお、今回もタブを開けば参照先HTTPSページへのアクセスは発生し得るため、使用するURLは事前に確認する。</p>
+<h2>3. 検証方法の区分</h2>
+<table>
+<thead>
+<tr>
+<th>区分</th>
+<th>操作する人</th>
+<th>操作場所</th>
+<th>確認すること</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A. 管理者による登録</td>
+<td>お客様のTeams管理者</td>
+<td>Teams管理センター</td>
+<td>組織のカタログに登録できるか</td>
+</tr>
+<tr>
+<td>B. 登録済みアプリの追加</td>
+<td>お客様のテストユーザー</td>
+<td>Teamsクライアント</td>
+<td>登録されたアプリを指定ユーザーが追加できるか</td>
+</tr>
+<tr>
+<td>C. ユーザーによる直接アップロード</td>
+<td>お客様のテストユーザー</td>
+<td>Teamsクライアント</td>
+<td>自分でZIPを取り込めるか</td>
+</tr>
+</tbody></table>
+<h3>3.1 今回の推奨範囲</h3>
+<p>まずAを行う。ユーザーへの提供まで確認する場合にBを続ける。Cはその運用が必要な場合だけ、別試験として行う。</p>
+<p>Aだけの場合も、第7章の利用対象確認・制限まで実施する。Bを省略しても、利用対象の管理を省略してよいわけではない。</p>
+<h3>3.2 管理者登録とユーザーアップロードの違い</h3>
+<p>一般ユーザーによるカスタムアプリのアップロードが禁止されていても、管理者による登録経路は別に存在する。一般ユーザーにアップロードメニューがないことだけで、組織への導入ができないと判断しない。[5]</p>
+<p>管理者登録の確認のために、全社員へZIPの直接アップロードを許可する必要はない。</p>
+<h2>4. 必要な環境</h2>
+<h3>4.1 当社側：パッケージ準備環境</h3>
+<table>
+<thead>
+<tr>
+<th>必要なもの</th>
+<th>必須／任意</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WindowsまたはMacのPC</td>
+<td>必須</td>
+<td>ファイルの編集・確認、ZIP作成</td>
+</tr>
+<tr>
+<td>テキストエディター</td>
+<td>必須</td>
+<td><code>manifest.json</code>の編集。UTF-8で保存する</td>
+</tr>
+<tr>
+<td>PNGアイコン2種類</td>
+<td>必須・同梱済み</td>
+<td>アプリの表示</td>
+</tr>
+<tr>
+<td>検証用GUID</td>
+<td>必須・同梱manifestに設定</td>
+<td>アプリの識別</td>
+</tr>
+<tr>
+<td>実際の開発会社情報</td>
+<td>必須・未設定</td>
+<td>会社名、Webサイト、プライバシー、利用条件</td>
+</tr>
+<tr>
+<td>利用してよいHTTPSページ</td>
+<td>必須・未設定</td>
+<td>タブの参照先</td>
+</tr>
+<tr>
+<td>自社のTeams検証環境</td>
+<td>任意・推奨</td>
+<td>お客様へ渡す前の登録確認</td>
+</tr>
+<tr>
+<td>Developer Portal for Teams</td>
+<td>任意</td>
+<td>マニフェストやパッケージのエラー確認</td>
+</tr>
+</tbody></table>
+<p>エディターはVS Codeやメモ帳などでよい。同梱アイコンやGUIDを利用する場合、再作成する必要はない。</p>
+<h3>4.2 今回は不要な環境・作業</h3>
+<table>
+<thead>
+<tr>
+<th>不要なもの</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Visual Studio、Node.js</td>
+<td>プログラムの実装・ビルドを行わないため</td>
+</tr>
+<tr>
+<td>Azure Functions、Azure App Service</td>
+<td>新規バックエンドやWebアプリを公開しないため</td>
+</tr>
+<tr>
+<td>Azure Botの作成・登録</td>
+<td>Botを使用しないため</td>
+</tr>
+<tr>
+<td>SSO用Microsoft Entraアプリ登録</td>
+<td>SSOを使用しないため</td>
+</tr>
+<tr>
+<td>クライアントシークレット</td>
+<td>認証処理を実装しないため</td>
+</tr>
+<tr>
+<td>APIサーバー、データベース</td>
+<td>API連携やデータ保存を実装しないため</td>
+</tr>
+</tbody></table>
+<p>ファイルを手作業で編集してZIP化するだけなら、作成時のMicrosoft 365アカウントは不要である。自社TeamsやDeveloper Portalで確認する場合は、その環境を利用できるアカウントが必要になる。</p>
+<p>マニフェストの<code>id</code>はTeamsアプリの識別子であり、SSO用のMicrosoft Entraアプリ登録とは別の項目である。[2]</p>
+<h3>4.3 お客様側：検証環境</h3>
+<table>
+<thead>
+<tr>
+<th>必要なもの</th>
+<th>必須／任意</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>お客様のMicrosoft 365／Teamsテナント</td>
+<td>必須</td>
+<td>実際の検証先</td>
+</tr>
+<tr>
+<td>Teamsアプリを管理できる管理者アカウント</td>
+<td>必須</td>
+<td>登録、利用対象確認、削除</td>
+</tr>
+<tr>
+<td>Microsoft 365管理センターを確認・操作できる担当者</td>
+<td>管理方式により必要</td>
+<td>統合アプリ側の設定確認・整合</td>
+</tr>
+<tr>
+<td>Teamsを利用できるテストユーザー</td>
+<td>BまたはCを行う場合に必須</td>
+<td>アプリの追加・直接アップロード</td>
+</tr>
+<tr>
+<td>テストグループ</td>
+<td>任意</td>
+<td>複数ユーザーをまとめて指定</td>
+</tr>
+<tr>
+<td>PCのブラウザー</td>
+<td>必須</td>
+<td>管理センター操作</td>
+</tr>
+<tr>
+<td>Teamsデスクトップ版またはWeb版</td>
+<td>BまたはCを行う場合に必須</td>
+<td>アプリの検索・追加</td>
+</tr>
+</tbody></table>
+<p>管理者操作はお客様が行う。当社への管理者アカウントやパスワードの共有は前提としない。</p>
+<h2>5. 役割分担</h2>
+<table>
+<thead>
+<tr>
+<th>作業</th>
+<th>当社</th>
+<th>お客様</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>検証範囲、合格条件の整理</td>
+<td>主担当</td>
+<td>確認</td>
+</tr>
+<tr>
+<td>検証用アプリ情報の決定</td>
+<td>主担当</td>
+<td>必要に応じて確認</td>
+</tr>
+<tr>
+<td>マニフェスト・アイコンの準備</td>
+<td>主担当</td>
+<td>不要</td>
+</tr>
+<tr>
+<td>会社情報・URLの確定、ZIP作成</td>
+<td>主担当</td>
+<td>不要</td>
+</tr>
+<tr>
+<td>自社環境での事前確認</td>
+<td>実施可能な場合に実施</td>
+<td>不要</td>
+</tr>
+<tr>
+<td>管理方式、既定公開範囲、ポリシーの確認</td>
+<td>支援</td>
+<td>主担当</td>
+</tr>
+<tr>
+<td>管理センターへのアップロード</td>
+<td>支援</td>
+<td>主担当</td>
+</tr>
+<tr>
+<td>利用対象の制限・確認</td>
+<td>支援</td>
+<td>主担当</td>
+</tr>
+<tr>
+<td>テストユーザーの指定・追加</td>
+<td>支援</td>
+<td>主担当</td>
+</tr>
+<tr>
+<td>結果の記録</td>
+<td>取りまとめ</td>
+<td>画面・結果を提供</td>
+</tr>
+<tr>
+<td>検証後の削除・設定復元</td>
+<td>支援</td>
+<td>主担当</td>
+</tr>
+</tbody></table>
+<h2>6. 当社側の作業手順</h2>
+<h3>6.1 手順1：同梱ファイルとアプリ情報を確認する</h3>
+<p>同梱の<code>TeamsImportTest</code>フォルダーを作業場所とする。既に用意されている3ファイルを編集・確認し、完成後にZIP化する。</p>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>今回の値・方針</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>アプリ名</td>
+<td>Teamsインポート確認</td>
+</tr>
+<tr>
+<td>正式名称</td>
+<td>Teamsアプリ導入可否確認用</td>
+</tr>
+<tr>
+<td>マニフェストのアプリID</td>
+<td><code>aa718629-9efd-4f0f-adcd-92722db3161c</code></td>
+</tr>
+<tr>
+<td>アプリバージョン</td>
+<td><code>1.0.0</code></td>
+</tr>
+<tr>
+<td>マニフェストバージョン</td>
+<td><code>1.19</code></td>
+</tr>
+<tr>
+<td>開発会社名</td>
+<td>未設定。置換用マーカーを実際の会社名に変更する</td>
+</tr>
+<tr>
+<td>会社・規約・タブのURL</td>
+<td>未設定。<code>example.invalid</code>配下の値を実際のHTTPS URLへ変更する</td>
+</tr>
+<tr>
+<td>Teams登録用ZIP</td>
+<td>未作成</td>
+</tr>
+</tbody></table>
+<p>上表のIDは、同梱<code>manifest.json</code>の<code>id</code>と一致することを確認する。</p>
+<p><strong>同じアプリを修正する場合はIDを維持し、更新配布時に<code>version</code>を上げる（例：<code>1.0.0</code>→<code>1.0.1</code>）。別アプリとして新規登録する場合のみ新しいIDを使う。</strong> マニフェストを変更した場合の版更新は公式スキーマでも示されている。[2]</p>
+<p>今回の未設定値を確定させる作業は初回配布の準備であり、未登録であれば初回版は<code>1.0.0</code>としてよい。既に登録した版を変更して再配布する場合は、同じIDでバージョンを上げ、既存アプリの詳細画面から更新ファイルをアップロードする。[5]</p>
+<p>別の検証アプリ用GUIDを新規発行する場合の例を示す。今回同梱のGUIDを利用する場合は実行不要である。</p>
+<p>Windows PowerShell：</p>
+<pre><code class="language-powershell">[guid]::NewGuid().ToString()
+</code></pre>
+<p>macOSのターミナル：</p>
+<pre><code class="language-bash">uuidgen
+</code></pre>
+<h3>6.2 手順2：未設定の会社情報・URLを置き換える</h3>
+<p><code>TeamsImportTest/manifest.json</code>をエディターで開き、次の項目を変更する。</p>
+<table>
+<thead>
+<tr>
+<th>JSONの項目</th>
+<th>設定する内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>developer.name</code></td>
+<td>実際の開発会社名。v1.19では32文字以内</td>
+</tr>
+<tr>
+<td><code>developer.websiteUrl</code></td>
+<td>開発会社・アプリの案内やサポートを提供するHTTPSページ</td>
+</tr>
+<tr>
+<td><code>developer.privacyUrl</code></td>
+<td>当該検証に使用するプライバシーポリシーのHTTPSページ</td>
+</tr>
+<tr>
+<td><code>developer.termsOfUseUrl</code></td>
+<td>当該検証に使用する利用条件のHTTPSページ</td>
+</tr>
+<tr>
+<td><code>staticTabs[0].contentUrl</code></td>
+<td>使用が認められているタブ参照先のHTTPSページ</td>
+</tr>
+<tr>
+<td><code>staticTabs[0].websiteUrl</code></td>
+<td>ブラウザーで開く場合のHTTPSページ</td>
+</tr>
+<tr>
+<td><code>validDomains</code></td>
+<td>タブで使用する実際のドメイン。URL全体やパスは書かない</td>
+</tr>
+</tbody></table>
+<p><code>example.invalid</code>は未設定であることを示す置換用の値であり、実際の参照先として使わない。会社名、URL、ドメインが未設定のままZIP化・配布しない。</p>
+<p>例として<code>contentUrl</code>が<code>https://teams-test.company.example/</code>なら、<code>validDomains</code>には<code>teams-test.company.example</code>を指定する。この記載例も実在の会社情報ではない。リダイレクトなどで別ドメインを読み込む場合は、そのドメインも確認する。</p>
+<p><code>developer.privacyUrl</code>と<code>developer.termsOfUseUrl</code>は、単に到達可能なページであればよいのではなく、それぞれの内容を提供するページを社内確認のうえ指定する。</p>
+<h3>6.3 手順3：マニフェストの構成を確認する</h3>
+<p>以下は同梱ファイルの構成を示す例である。<code>manifestVersion: 1.19</code>はこの検証用の固定値であり、最新版という意味ではない。</p>
+<pre><code class="language-json">{
+  &quot;$schema&quot;: &quot;https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json&quot;,
+  &quot;manifestVersion&quot;: &quot;1.19&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;id&quot;: &quot;aa718629-9efd-4f0f-adcd-92722db3161c&quot;,
+  &quot;developer&quot;: {
+    &quot;name&quot;: &quot;要設定：開発会社の正式名称&quot;,
+    &quot;websiteUrl&quot;: &quot;https://example.invalid/&quot;,
+    &quot;privacyUrl&quot;: &quot;https://example.invalid/privacy&quot;,
+    &quot;termsOfUseUrl&quot;: &quot;https://example.invalid/terms&quot;
+  },
+  &quot;name&quot;: {
+    &quot;short&quot;: &quot;Teamsインポート確認&quot;,
+    &quot;full&quot;: &quot;Teamsアプリ導入可否確認用&quot;
+  },
+  &quot;description&quot;: {
+    &quot;short&quot;: &quot;カスタムアプリのインポート確認専用です。&quot;,
+    &quot;full&quot;: &quot;お客様のTeams環境へのアプリ登録と追加の可否を確認するための検証用パッケージです。業務機能、Bot、SSO、外部API連携は実装していません。タブの画面表示は検証対象外です。&quot;
+  },
+  &quot;icons&quot;: {
+    &quot;color&quot;: &quot;color.png&quot;,
+    &quot;outline&quot;: &quot;outline.png&quot;
+  },
+  &quot;accentColor&quot;: &quot;#2563EB&quot;,
+  &quot;staticTabs&quot;: [
+    {
+      &quot;entityId&quot;: &quot;import-test&quot;,
+      &quot;name&quot;: &quot;インポート確認&quot;,
+      &quot;contentUrl&quot;: &quot;https://example.invalid/&quot;,
+      &quot;websiteUrl&quot;: &quot;https://example.invalid/&quot;,
+      &quot;scopes&quot;: [&quot;personal&quot;]
+    }
+  ],
+  &quot;validDomains&quot;: [&quot;example.invalid&quot;]
+}
+</code></pre>
+<p>Bot、メッセージ拡張、SSO、Microsoft Graphなどの追加権限、業務API連携は追加しない。追加した場合は別の確認項目が必要となる。</p>
+<h3>6.4 手順4：アイコンを確認する</h3>
+<table>
+<thead>
+<tr>
+<th>ファイル名</th>
+<th>サイズ</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>color.png</code></td>
+<td>192×192ピクセル</td>
+<td>カラーアイコン</td>
+</tr>
+<tr>
+<td><code>outline.png</code></td>
+<td>32×32ピクセル</td>
+<td>透明背景に白い図柄のアイコン</td>
+</tr>
+</tbody></table>
+<p>画像形式はPNGとし、ファイル名をマニフェストの<code>icons</code>と一致させる。[2] 同梱アイコンをそのまま使用してよい。変更する場合も、画像サイズ・透過・白い図柄を維持する。</p>
+<h3>6.5 手順5：JSONとマニフェストを確認する</h3>
+<p>Windows PowerShellでは、<code>TeamsImportTest</code>フォルダーで次を実行するとJSON構文を確認できる。</p>
+<pre><code class="language-powershell">Get-Content -Raw -Encoding UTF8 .\manifest.json |
+    ConvertFrom-Json |
+    Out-Null
+</code></pre>
+<p><strong>JSONとして読み込めることは、Teams仕様への適合やお客様環境への登録成功を意味しない。</strong> マニフェストのスキーマに対する確認と、実際の登録試験は別に行う。</p>
+<p>エディターでv1.19スキーマを参照するか、Developer PortalのApp package editorでファイル更新時のエラーを確認する。Developer Portalはエラー付きの保存が可能なため、「読み込めた」「保存できた」だけを適合判定にしない。[4]</p>
+<p>Developer Portalの別機能である「Publish → App validation」はTeams Store審査向けの検証であり、この個人用タブだけの登録試験の必須手順としない。</p>
+<h3>6.6 手順6：ZIP化前のチェックを行う</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>TeamsImportTest</code>直下に<code>manifest.json</code>、<code>color.png</code>、<code>outline.png</code>がある。</li>
+<li><input disabled="" type="checkbox"> <code>manifest.json.txt</code>などの意図しない拡張子になっていない。</li>
+<li><input disabled="" type="checkbox"> JSONをUTF-8で保存した。</li>
+<li><input disabled="" type="checkbox"> 会社名マーカー、<code>example.invalid</code>、その他の未設定値をすべて置換した。</li>
+<li><input disabled="" type="checkbox"> URLの用途と使用可否を確認し、実際のHTTPS URLを記載した。</li>
+<li><input disabled="" type="checkbox"> <code>validDomains</code>が実際の参照先ドメインと一致している。</li>
+<li><input disabled="" type="checkbox"> アプリIDが6.1の値と一致している。</li>
+<li><input disabled="" type="checkbox"> 更新配布の場合は同じIDを維持し、バージョンを上げた。</li>
+<li><input disabled="" type="checkbox"> アイコン名、PNG形式、画像サイズ、アウトラインの透過を確認した。</li>
+<li><input disabled="" type="checkbox"> 業務機能を持たない検証用アプリであることが説明に記載されている。</li>
+<li><input disabled="" type="checkbox"> JSON構文とマニフェストのエラーを確認した。</li>
+<li><input disabled="" type="checkbox"> 検証先の公開範囲・登録後の利用対象をお客様と確認した。</li>
+</ul>
+<h3>6.7 手順7：準備完了後にZIPを作成する</h3>
+<p><strong>今回の納品状態は、この手順を実行する前である。</strong> 未設定値の置換と前項の確認が終わった段階で、以下のいずれかの方法を実行する。</p>
+<p>Windows PowerShellでは<code>TeamsImportTest</code>フォルダーで実行する。</p>
+<pre><code class="language-powershell">Compress-Archive `
+    -Path .\manifest.json, .\color.png, .\outline.png `
+    -DestinationPath ..\TeamsImportTest.zip
+</code></pre>
+<p>macOSではターミナルで<code>TeamsImportTest</code>フォルダーへ移動してから実行する。</p>
+<pre><code class="language-bash">zip -X ../TeamsImportTest.zip manifest.json color.png outline.png
+</code></pre>
+<p>同名ZIPが既にある場合は、前の検証成果物として別名へ移動・保管してから作成する。既存ZIPに追加・更新する形で使い回さず、今回の3ファイルだけを格納したZIPを用意する。</p>
+<p>ZIPを開き、3ファイルが直下にあることを確認する。次の構造は使わない。</p>
+<pre><code class="language-text">TeamsImportTest.zip
+└── TeamsImportTest/         ← この余分な階層を作らない
+    ├── manifest.json
+    ├── color.png
+    └── outline.png
+</code></pre>
+<p>手順書、README、検証記録、元画像などはTeams登録用ZIPに含めない。GUIで圧縮した場合も、親フォルダーやmacOSの付随ファイルが入っていないことを確認する。</p>
+<h3>6.8 手順8：可能なら自社環境で事前登録する</h3>
+<p>お客様へ渡すZIPと同じものを、自社Teams検証環境へ登録する。パッケージ不備とお客様側の制限を切り分けるために実施する。</p>
+<table>
+<thead>
+<tr>
+<th>確認結果</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JSON構文エラーなし</td>
+<td>JSONとして解析できた</td>
+</tr>
+<tr>
+<td>スキーマ・編集ツール上でエラーなし</td>
+<td>その検証方法でマニフェストの不備が検出されなかった</td>
+</tr>
+<tr>
+<td>自社Teamsに登録成功</td>
+<td>自社環境で登録できた</td>
+</tr>
+<tr>
+<td>お客様Teamsに登録成功</td>
+<td>お客様環境で登録できた</td>
+</tr>
+</tbody></table>
+<p>前段の成功で後段の成功を確定させない。事前確認を実施できない場合は、未実施と明記する。自社環境でも利用対象を必要な範囲に制限する。</p>
+<h3>6.9 手順9：お客様へ渡す</h3>
+<table>
+<thead>
+<tr>
+<th>共有物</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>検証用ZIP</td>
+<td>完成した<code>TeamsImportTest.zip</code></td>
+</tr>
+<tr>
+<td>アプリ情報</td>
+<td>名称、マニフェストの<code>id</code>、バージョン</td>
+</tr>
+<tr>
+<td>検証範囲</td>
+<td>Aのみ、A+B、必要ならC</td>
+</tr>
+<tr>
+<td>利用対象</td>
+<td>Aのみは原則No one。Bは指定テストユーザー／グループ</td>
+</tr>
+<tr>
+<td>対象外事項</td>
+<td>タブ表示、業務機能、Bot、SSO、API連携</td>
+</tr>
+<tr>
+<td>操作手順</td>
+<td>本手順書</td>
+</tr>
+<tr>
+<td>事前検証結果</td>
+<td>JSON、スキーマ、自社登録の実施結果を区別して記載</td>
+</tr>
+<tr>
+<td>結果の共有方法</td>
+<td>登録情報、利用対象、追加状態、エラー全文など</td>
+</tr>
+</tbody></table>
+<p>タブが表示されなくても、登録・追加に失敗したとは限らないことを事前に伝える。</p>
+<h2>7. お客様側の作業手順：管理者による登録</h2>
+<h3>7.1 手順1：対象テナント、権限、管理方式を確認する</h3>
+<ul>
+<li><input disabled="" type="checkbox"> 操作対象が正しいお客様テナントである。</li>
+<li><input disabled="" type="checkbox"> Teamsアプリを管理できるアカウントである。</li>
+<li><input disabled="" type="checkbox"> 社内で必要な登録・検証の確認が済んでいる。</li>
+<li><input disabled="" type="checkbox"> 受領したZIPの名称、マニフェストID、バージョンを把握している。</li>
+<li><input disabled="" type="checkbox"> 今回の範囲がAのみか、Bまで含むか確定している。</li>
+<li><input disabled="" type="checkbox"> アプリ中心の管理の利用状況と、統合アプリ管理（UAM）への移行状況を確認した。</li>
+<li><input disabled="" type="checkbox"> 登録直後の既定の利用対象と、対象を限定する方法を確認した。</li>
+</ul>
+<p>アプリ中心の管理と、Teams／Microsoft 365両管理センターをまたぐUAMは、同じ確認項目として扱わない。それぞれ現在の環境を確認する。[6][10]</p>
+<h3>7.2 手順2：アップロード前に既定の公開範囲を確認する</h3>
+<p>Teams管理センターで、概ね次の場所を確認する。</p>
+<pre><code class="language-text">Teamsアプリ → アプリを管理 → アクション → 組織全体のアプリ設定
+</code></pre>
+<p>カスタムアプリについて、利用可能なアプリをユーザーが既定でインストール・利用できる設定と、新しく登録するアプリの扱いを確認する。[6][11]</p>
+<table>
+<thead>
+<tr>
+<th>今回の検証</th>
+<th>登録後に設定・確認する利用対象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A. 管理者登録のみ</td>
+<td>原則<code>No one</code>。管理者はカタログへの登録情報を確認する</td>
+</tr>
+<tr>
+<td>A+B. 登録とユーザー追加</td>
+<td>指定したテストユーザー／テストグループのみ</td>
+</tr>
+</tbody></table>
+<p>新規アプリが既定で全員に利用可能になる場合は、<strong>アップロード前に</strong>お客様の管理者が限定方法を決める。既定設定を一時変更する場合は、他のアプリへの影響と変更前の値を確認し、必要な反映を待つ。登録直後に個別設定を変更すれば、最初から公開されなかったことになるとは扱わない。</p>
+<p>必要な限定方法が確立できていない場合は、登録操作を保留してお客様の運用担当者と調整する。検証のために無条件で組織全体のポリシーを緩和しない。</p>
+<h3>7.3 手順3：Teams管理センターからアップロードする</h3>
+<p>お客様管理者が<a href="https://admin.teams.microsoft.com/">Teams管理センター</a>を開く。</p>
+<pre><code class="language-text">Teamsアプリ → アプリを管理 → 新しいアプリをアップロード
+</code></pre>
+<p>画面によっては［アクション］内にアップロード操作がある。文言や配置は現在の画面に合わせて読み替える。[5]</p>
+<p>当社から受領した<code>TeamsImportTest.zip</code>を、解凍せずに選択してアップロードする。確認画面が出た場合は、検証用アプリの名称を確認して進める。</p>
+<h3>7.4 手順4：登録後ただちに利用対象を確認する</h3>
+<p>対象アプリの詳細を開き、次を確認・保存する。</p>
+<pre><code class="language-text">対象アプリ → ユーザーとグループ → 利用可能性（Availability）
+           → 利用可能性を編集 → No one または特定のユーザー／グループ
+</code></pre>
+<p>Aのみの場合は<code>No one</code>、Bまで実施する場合は指定テストユーザー／グループのみとする。保存後の値と時刻を記録し、意図せず<code>Everyone</code>になっていないことを確認する。反映時間は第8.7項を参照する。</p>
+<p>アプリ中心の管理が利用されていない環境では、現在のアプリ状態・アクセス制御方式で同等の範囲に制限する。本検証のためだけに管理方式の移行は行わない。</p>
+<h3>7.5 手順5：Microsoft 365側の設定との整合を確認する</h3>
+<table>
+<thead>
+<tr>
+<th>UAMの状態</th>
+<th>確認方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>移行済み</td>
+<td>Teams管理センターまたはMicrosoft 365管理センターの統合アプリから管理する。対象アプリの利用対象が意図どおりになっていることを確認する</td>
+</tr>
+<tr>
+<td>未移行</td>
+<td>Teams管理センターに加え、対象アプリを管理するMicrosoft 365管理センターの［統合アプリ］側も確認し、許可・ブロックなどの設定を整合させる</td>
+</tr>
+<tr>
+<td>不明</td>
+<td>お客様管理者が移行状況と対象アプリの管理場所を確認し、記録する</td>
+</tr>
+</tbody></table>
+<p>未移行環境では、一方の管理センターだけの設定で他方にも反映済みと判断しない。対象アプリの表示状況と管理方式に合わせて確認する。すべての環境で両方の管理センターに同じ操作を繰り返す必要がある、という意味ではない。[6][10][11]</p>
+<h3>7.6 手順6：名称、ID、バージョンを照合する</h3>
+<table>
+<thead>
+<tr>
+<th>確認項目</th>
+<th>期待する内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>アプリ名</td>
+<td>受領したアプリ情報と一致する</td>
+</tr>
+<tr>
+<td>External app ID／外部アプリID</td>
+<td><code>manifest.json</code>の<code>id</code>と一致する</td>
+</tr>
+<tr>
+<td>バージョン</td>
+<td>受領したアプリバージョンと一致する</td>
+</tr>
+<tr>
+<td>説明</td>
+<td>業務機能のない検証用である旨を確認できる</td>
+</tr>
+<tr>
+<td>利用対象</td>
+<td>No one、または指定テストユーザー／グループのみ</td>
+</tr>
+</tbody></table>
+<p><strong>マニフェストの<code>id</code>と比較するのは、マニフェスト由来のExternal app IDである。</strong> Teamsのカタログで生成されたApp IDは別の値になることがある。Microsoft Graphの<code>teamsApp</code>でも<code>externalId</code>とカタログの<code>id</code>は区別されている。[8][9]</p>
+<p>画面で単に「App ID」と表示されている場合は、その項目がどちらのIDかを確認する。値が異なるだけで誤登録と判定しない。External app IDが見つからない場合は、［アプリを管理］の列設定でExternal app ID列を表示するか、対象カスタムアプリの詳細画面を確認する。[9] 未確認のままID一致と記録しない。Graph APIの実装は本試験に不要である。</p>
+<h3>7.7 管理者によるインポート試験の合格条件</h3>
+<p>次の3条件を満たせば、登録そのものを成功とする。</p>
+<ol>
+<li>ZIPのアップロードが完了した。</li>
+<li>管理センターで対象アプリを確認できた。</li>
+<li>名称、マニフェスト由来ID、バージョンが配布情報と一致した。</li>
+</ol>
+<p>加えて、本手順の運用上の完了条件として、利用対象を想定どおりに制限し、その状態を記録する。<strong>登録は成功していても利用対象の確認が未完了なら、「登録成功／利用対象確認中」と分けて報告する。</strong></p>
+<p>登録成功は、すべてのユーザーが利用可能という意味ではない。Bを実施する場合は次章へ進む。</p>
+<h2>8. お客様側の作業手順：テストユーザーによる追加</h2>
+<p>本章はBを行う場合に実施する。</p>
+<h3>8.1 手順1：利用対象を確認する</h3>
+<p>第7章で保存した利用対象が、指定したテストユーザーまたはテストグループになっていることを確認する。Aで<code>No one</code>に設定した後にBを行う場合は、この段階でテスト対象に限定して変更する。</p>
+<p>アプリ中心の管理では、［ユーザーとグループ］→［利用可能性］→［利用可能性を編集］→［特定のユーザーまたはグループ］で対象を設定する。[6]</p>
+<h3>8.2 テストアカウントの方針</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>方針</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>利用対象</td>
+<td>指定テストユーザー／テストグループ</td>
+</tr>
+<tr>
+<td>テストアカウント</td>
+<td>お客様テナント内のTeams利用ユーザー</td>
+</tr>
+<tr>
+<td>当社のゲストアカウント</td>
+<td>初回試験の前提にしない</td>
+</tr>
+<tr>
+<td>全社員への公開</td>
+<td>原則不要</td>
+</tr>
+</tbody></table>
+<p>「特定のユーザーまたはグループ」の設定では、ゲストを対象に指定しても利用できない制約がある。まずテナント内ユーザーで確認する。[6]</p>
+<h3>8.3 手順2：テストユーザーでTeamsを開く</h3>
+<p>対象ユーザーでTeamsにサインインし、現在選択している組織が検証対象テナントであることを確認する。複数組織を切り替えている場合は特に注意する。</p>
+<h3>8.4 手順3：登録済みアプリを探す</h3>
+<p>Teamsのアプリ画面から、組織用アプリの一覧や名称検索で対象を探す。[5]</p>
+<pre><code class="language-text">Teams → アプリ → 組織向けに作成 → Teamsインポート確認
+</code></pre>
+<p>文言や配置はTeamsの表示に合わせて読み替える。見つからない場合は第8.7項の反映待ちと利用対象を確認する。</p>
+<h3>8.5 手順4：追加する</h3>
+<p>対象アプリを選んで［追加］を実行する。Teamsの［アプリを管理］などで追加済みの状態を確認し、証跡を保存する。</p>
+<p>追加操作に伴ってタブが開き、画面表示に失敗する場合も、追加済み状態は別に確認する。タブ表示エラーだけでBを失敗としない。</p>
+<h3>8.6 ユーザー追加試験の合格条件</h3>
+<ol>
+<li>対象ユーザーが検証用アプリを見つけられた。</li>
+<li>追加操作を実行できた。</li>
+<li>ユーザーのTeamsで追加済みと確認できた。</li>
+</ol>
+<p>タブの正常表示は合格条件に含めない。</p>
+<h3>8.7 反映待ちの扱い</h3>
+<p>利用可能性の変更には最大24時間、まれにクライアントへの反映に最大6日かかる場合があるとMicrosoftは案内している。[6] この時間は利用対象変更の反映に関する目安であり、すべてのエラーを待つだけで解消できるという意味ではない。</p>
+<p>直後に表示されない場合は、対象ユーザー・グループ、対象組織、保存された設定、アプリの許可状態、UAMの管理方式を確認する。設定変更時刻、再確認時刻、表示状態を記録し、**「反映待ち」**として扱う。即時に失敗と断定したり、反映待ち中にアプリを繰り返し新規登録したりしない。</p>
+<p>24時間後も反映されない場合は、お客様管理者が設定やサービス状況を再確認する。必要に応じて問い合わせし、再確認期限を決める。6日間待機を必須条件にするものではない。</p>
+<h2>9. 任意の追加試験：一般ユーザーによるZIPの直接アップロード</h2>
+<h3>9.1 実施する条件</h3>
+<p>一般ユーザーが自分でZIPを取り込む運用を想定している場合だけ、Cとして実施する。AやBとは別の結果を記録する。</p>
+<h3>9.2 管理者側の事前確認</h3>
+<p>次をお客様管理者が確認する。[5][7]</p>
+<ul>
+<li>組織側のカスタムアプリアップロードに関する設定。</li>
+<li>テストユーザーに割り当てられたアプリセットアップポリシー。</li>
+<li>当該ポリシーの［カスタムアプリをアップロード］設定。</li>
+</ul>
+<p>必要な場合は、テストユーザーだけに許可する。アプリの「利用可能性」と、ユーザーの「直接アップロード許可」は別の管理項目として扱う。全社員への設定変更を前提とせず、禁止されている運用を検証のために無条件で許可するよう求めない。</p>
+<h3>9.3 ユーザー側の操作</h3>
+<pre><code class="language-text">Teams → アプリ → アプリを管理 → アプリをアップロード
+      → カスタムアプリをアップロード → TeamsImportTest.zip → 追加
+</code></pre>
+<p>画面表示に合わせて読み替える。個人用タブの追加先として、テストユーザー自身の個人スコープを確認する。</p>
+<h3>9.4 判定方法</h3>
+<table>
+<thead>
+<tr>
+<th>状況</th>
+<th>判定・対応</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ZIPを選択して追加済みになった</td>
+<td>C成功</td>
+</tr>
+<tr>
+<td>アップロードメニューがない</td>
+<td>適用ポリシーなどを確認する</td>
+</tr>
+<tr>
+<td>ZIP選択後にエラーになる</td>
+<td>エラー全文を記録し、パッケージと環境の問題を切り分ける</td>
+</tr>
+<tr>
+<td>組織方針で禁止されている</td>
+<td>C対象外、または運用上利用不可として記録する</td>
+</tr>
+<tr>
+<td>設定変更がまだ反映されていない</td>
+<td>反映待ちとして再確認時刻を記録する</td>
+</tr>
+</tbody></table>
+<p>直接アップロードできないことと、管理者が組織に登録できないことは同義ではない。</p>
+<h2>10. 検証結果の記録</h2>
+<h3>10.1 基本情報</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>記録内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>検証日・時刻（タイムゾーン）</td>
+<td></td>
+</tr>
+<tr>
+<td>お客様名</td>
+<td></td>
+</tr>
+<tr>
+<td>対象テナント・組織</td>
+<td></td>
+</tr>
+<tr>
+<td>操作者・区分</td>
+<td>管理者／一般ユーザー</td>
+</tr>
+<tr>
+<td>Teamsクライアント</td>
+<td>デスクトップ／Web</td>
+</tr>
+<tr>
+<td>アプリ名</td>
+<td></td>
+</tr>
+<tr>
+<td>マニフェストの<code>id</code></td>
+<td></td>
+</tr>
+<tr>
+<td>External app ID</td>
+<td></td>
+</tr>
+<tr>
+<td>カタログ側App ID</td>
+<td>表示される場合のみ。上記と混同しない</td>
+</tr>
+<tr>
+<td>バージョン</td>
+<td></td>
+</tr>
+<tr>
+<td>ZIPファイル名</td>
+<td></td>
+</tr>
+<tr>
+<td>検証方法</td>
+<td>A／A+B／Cなど</td>
+</tr>
+<tr>
+<td>アプリ中心の管理</td>
+<td>利用中／未移行／要確認</td>
+</tr>
+<tr>
+<td>UAM</td>
+<td>移行済み／未移行／要確認</td>
+</tr>
+<tr>
+<td>登録前の既定設定</td>
+<td></td>
+</tr>
+<tr>
+<td>登録後の利用対象</td>
+<td>No one／指定テストユーザー・グループ</td>
+</tr>
+<tr>
+<td>設定変更時刻・再確認予定</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3>10.2 結果一覧</h3>
+<p>記号だけでなく、証跡番号・画面名・日時を備考に記録する。</p>
+<table>
+<thead>
+<tr>
+<th>No.</th>
+<th>確認項目</th>
+<th>結果</th>
+<th>備考</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>登録前に既定公開範囲と管理方式を確認した</td>
+<td>完了／未完了</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>管理センターでZIPをアップロードできた</td>
+<td>成功／失敗／未実施</td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>対象アプリを管理画面で確認できた</td>
+<td>成功／失敗／未実施</td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td>名称、External app ID、バージョンが一致した</td>
+<td>成功／失敗／未確認</td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>利用対象をNo oneまたは指定テスト対象に制限した</td>
+<td>完了／反映待ち／未完了</td>
+<td>Aのみでも実施</td>
+</tr>
+<tr>
+<td>6</td>
+<td>必要な管理センター間の設定を確認した</td>
+<td>完了／要確認／対象外</td>
+<td>UAM状態と根拠を記載</td>
+</tr>
+<tr>
+<td>7</td>
+<td>テストユーザーがアプリを見つけられた</td>
+<td>成功／失敗／反映待ち／未実施</td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td>テストユーザーが追加済みになった</td>
+<td>成功／失敗／反映待ち／未実施</td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td>一般ユーザーがZIPを直接アップロードできた</td>
+<td>成功／失敗／反映待ち／対象外</td>
+<td>Cのみ</td>
+</tr>
+<tr>
+<td>10</td>
+<td>タブの画面表示</td>
+<td>対象外</td>
+<td>登録・追加の成否と分ける</td>
+</tr>
+<tr>
+<td>11</td>
+<td>検証後の削除・設定復元</td>
+<td>完了／残置合意／未完了</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3>10.3 エラー発生時に記録する情報</h3>
+<ul>
+<li>発生した画面・手順、日時、A／B／Cの区分。</li>
+<li>エラーメッセージ全文とスクリーンショット。</li>
+<li>操作者の区分と検証対象テナント。</li>
+<li>アプリ名、マニフェストID、External app ID、バージョン。</li>
+<li>使用したZIPと、直前の設定変更内容・変更時刻。</li>
+<li>保存済み設定と、クライアント側の表示状態。</li>
+</ul>
+<p>パスワード、アクセストークン、クライアントシークレットなどの認証情報は記録・共有しない。スクリーンショット内の他ユーザー情報などは、共有先に応じて必要な範囲にする。</p>
+<h3>10.4 結果報告例</h3>
+<p><strong>AとBが成功した場合</strong></p>
+<blockquote>
+<p>お客様のTeams管理センターから検証用パッケージを登録し、名称、External app ID、バージョンの一致を確認した。利用対象を指定テストユーザーに限定し、当該ユーザーのTeamsで追加済みとなることを確認した。タブ表示、業務機能、Bot、SSO、API連携は確認していない。</p>
+</blockquote>
+<p><strong>Aのみ成功した場合</strong></p>
+<blockquote>
+<p>お客様のTeams管理センターで検証用パッケージの登録情報を確認した。対象アプリの利用対象はNo oneに設定した。ユーザーによる追加は未実施である。</p>
+</blockquote>
+<p><strong>A成功、B反映待ちの場合</strong></p>
+<blockquote>
+<p>管理者登録とアプリ情報の照合は成功した。利用対象を指定テストユーザーに変更したが、クライアントでは未確認のため、Bは反映待ちとする。設定変更日時と次回確認日時は検証記録に記載した。</p>
+</blockquote>
+<p><strong>Cが禁止されていた場合</strong></p>
+<blockquote>
+<p>テストユーザーの直接アップロードは組織方針により実施しなかった。この結果はCの経路に関するものであり、管理者登録の可否を示すものではない。</p>
+</blockquote>
+<h2>11. トラブル時の切り分け</h2>
+<table>
+<thead>
+<tr>
+<th>発生事象</th>
+<th>主な確認内容</th>
+<th>注意点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>アップロード操作が見つからない</td>
+<td>操作者の権限、管理センター、UI配置</td>
+<td>パッケージ不備とは限らない</td>
+</tr>
+<tr>
+<td>ZIPが受け付けられない</td>
+<td>直下の3ファイル、JSON、スキーマ、アイコン、未設定値、エラー文</td>
+<td>エラー全文を記録する</td>
+</tr>
+<tr>
+<td>IDが一致しないように見える</td>
+<td>External app IDかカタログ側App IDか</td>
+<td>マニフェストIDとカタログIDを直接比較しない</td>
+</tr>
+<tr>
+<td>名称・バージョンが想定と違う</td>
+<td>配布ZIPとmanifest、更新対象</td>
+<td>別版や別アプリを選択していないか確認する</td>
+</tr>
+<tr>
+<td>同じIDの更新が受け付けられない</td>
+<td>バージョン更新、既存アプリの更新操作</td>
+<td>IDを毎回変えて回避しない</td>
+</tr>
+<tr>
+<td>管理画面にあるがユーザーに見えない</td>
+<td>利用対象、対象組織、UAM状態、設定保存時刻</td>
+<td>Aは成功している可能性がある</td>
+</tr>
+<tr>
+<td>No oneを設定したのに古い表示が残る</td>
+<td>保存済み設定、反映待ち、管理方式</td>
+<td>表示と利用状態、管理設定を分けて記録する</td>
+</tr>
+<tr>
+<td>見えるが追加できない</td>
+<td>利用対象・許可設定・エラー全文</td>
+<td>登録成功と追加成功を分ける</td>
+</tr>
+<tr>
+<td>追加できたがタブが表示されない</td>
+<td>追加済み状態、埋め込み・TeamsJSの要件</td>
+<td>本試験のタブ表示は対象外</td>
+</tr>
+<tr>
+<td>直接アップロードのメニューがない</td>
+<td>組織設定、セットアップポリシー</td>
+<td>Aも禁止とは判断しない</td>
+</tr>
+<tr>
+<td>ゲストだけ利用できない</td>
+<td>ゲスト制約、利用対象</td>
+<td>まずテナント内ユーザーで確認する</td>
+</tr>
+<tr>
+<td>想定より広い利用対象になっている</td>
+<td>登録時の既定、アプリ個別の保存値、両管理センター</td>
+<td>利用対象を是正し、登録結果と別に記録する</td>
+</tr>
+</tbody></table>
+<h2>12. 検証終了後の対応</h2>
+<p>お客様の運用方針に従い、次を行う。</p>
+<ol>
+<li>検証用アプリを残すか削除するか決める。</li>
+<li>不要なら管理者が管理センターから削除する。残すなら利用対象をNo oneなど必要な範囲に限定する。</li>
+<li>テストユーザーに追加したアプリが不要なら、ユーザー側でも削除する。</li>
+<li>一時変更した既定設定、ポリシー、利用対象を変更前の状態へ戻す。既存アプリへの影響も確認する。</li>
+<li>必要な管理センターの状態と反映を確認し、結果を記録する。</li>
+<li>使用したZIP、アプリ情報、検証記録、証跡を合意した場所に保管する。</li>
+</ol>
+<p>本番アプリ導入時は本番用パッケージで再検証する。Bot、SSO、追加権限、外部通信先などを組み込む場合は、今回対象外の承認・接続・動作条件を別途確認する。</p>
+<h2>13. 最小限の実施内容</h2>
+<h3>当社側</h3>
+<ol>
+<li>同梱<code>TeamsImportTest</code>の会社名・URL・ドメインを実値に変更する。</li>
+<li>検証用アプリID、バージョン、JSON、スキーマ、アイコンを確認する。</li>
+<li>3ファイルをZIP直下へ格納する。</li>
+<li>ZIPとアプリ情報、本手順書をお客様へ渡す。</li>
+</ol>
+<h3>お客様側</h3>
+<ol>
+<li>テナント、権限、管理方式、新規カスタムアプリの既定公開範囲を確認する。</li>
+<li>想定する利用対象を確保して、管理者がZIPをアップロードする。</li>
+<li>登録後の利用対象を確認し、Aのみなら原則No oneにする。</li>
+<li>管理画面で名称、External app ID、バージョンを照合する。</li>
+<li>結果を記録し、検証後の後片付けを行う。</li>
+</ol>
+<p>Bを実施する場合だけ、指定テストユーザーの追加確認を続ける。<strong>この最小検証のために、新しいAzure環境、Bot、認証処理、API、データベースを構築する必要はない。</strong></p>
+<h2>14. 参考資料</h2>
+<p>参照確認日：2026年9月30日。管理画面の文言・配置・移行状況は、お客様の実際の環境でも確認する。</p>
+<ol>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/build-and-test/apps-package">Microsoft Learn：Teamsアプリパッケージ</a></li>
+<li><a href="https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json">Microsoft：Teamsアプリマニフェスト v1.19 JSON Schema</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/tabs/how-to/tab-requirements">Microsoft Learn：Teamsタブの要件</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/build-and-test/manage-your-apps-in-developer-portal">Microsoft Learn：Developer Portalでのアプリ管理</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/teams-custom-app-policies-and-settings">Microsoft Learn：カスタムアプリのポリシーと設定</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/app-centric-management">Microsoft Learn：アプリ中心の管理</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/deploy-and-publish/apps-upload">Microsoft Learn：Teamsへのアプリのアップロード</a></li>
+<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/teamsapp?view=graph-rest-1.0">Microsoft Graph：teamsAppリソース（externalIdとカタログIDの違い）</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/teams-analytics-and-reports/app-usage-report">Microsoft Learn：Teamsアプリ使用状況レポート（External app ID）</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/uam-tac-mac">Microsoft Learn：Teams／Microsoft 365管理センター間の統合アプリ管理</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoftteams/manage-apps">Microsoft Learn：Teams管理センターでのアプリ管理</a></li>
+</ol>
+</body></html>

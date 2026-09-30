@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "1.0.0",
+  "id": "aa718629-9efd-4f0f-adcd-92722db3161c",
+  "developer": {
+    "name": "要設定：開発会社の正式名称",
+    "websiteUrl": "https://example.invalid/",
+    "privacyUrl": "https://example.invalid/privacy",
+    "termsOfUseUrl": "https://example.invalid/terms"
+  },
+  "name": {
+    "short": "Teamsインポート確認",
+    "full": "Teamsアプリ導入可否確認用"
+  },
+  "description": {
+    "short": "カスタムアプリのインポート確認専用です。",
+    "full": "お客様のTeams環境へのアプリ登録と追加の可否を確認するための検証用パッケージです。業務機能、Bot、SSO、外部API連携は実装していません。タブの画面表示は検証対象外です。"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#2563EB",
+  "staticTabs": [
+    {
+      "entityId": "import-test",
+      "name": "インポート確認",
+      "contentUrl": "https://example.invalid/",
+      "websiteUrl": "https://example.invalid/",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "validDomains": [
+    "example.invalid"
+  ]
+}
